@@ -42,9 +42,10 @@ def add_columns_to_vcf_df(vcf_df):
 
     def _get_var_type(row):
         """ TODO add docstring """
-        if row["REF_len"] == row["REF_len"] == 1:
+        # TODO double-check and test below:
+        if row["REF_len"] == row["ALT_len"] == 1:
             return "snv"
-        elif row["REF_len"] >= 1 and row["ALT_len"] >= 1:
+        elif row["REF_len"] > 1 and row["ALT_len"] > 1:
             return "delins"
         elif row["REF_len"] > 1:
             return "deletion"
