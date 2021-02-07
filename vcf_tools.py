@@ -227,6 +227,7 @@ def _check_and_reformat_user_inputs(vcf_path, vcf_fields, chrom, alt_number, sta
 
 
 # TODO tests
+# TODO add identifier for filtering in ID, for example for rsIDs
 # TODO accommodate alt_number > 1
 
 
