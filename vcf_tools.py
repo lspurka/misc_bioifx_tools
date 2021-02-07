@@ -70,14 +70,16 @@ def add_columns_to_vcf_df(vcf_df):
     return vcf_df
 
 
-def filter_vcf_df(vcf_df, start_position, end_position, pad, ref_alleles, alt_alleles, qual_threshold, 
+def filter_vcf_df(vcf_df, chrom, start_position, end_position, pad, ref_alleles, alt_alleles, qual_threshold, 
         variant_types):
     """ Filter VCF dataframe 
     # TODO finish docstring
     """
 
+    if chrom:
+        vcf_df = vcf_df.query("CHROM == @chrom")
+
     if start_position:
-        assert type(start_position)
         if pad:
             start_position -= pad
         vcf_df = vcf_df.query("POS >= @start_position")
@@ -97,15 +99,23 @@ def filter_vcf_df(vcf_df, start_position, end_position, pad, ref_alleles, alt_al
         vcf_df = vcf_df.query("QUAL >= @qual_threshold")
 
     if variant_types:
-        pass
-        # df = pd.DataFrame()
-        # if "snv" in variant_types:
-        #     filtered_df = vcf_df.query("POS == END")
-        #     df = pd.concat([df, filtered_df])
-        # if ("DELETION" or "DELINS") in variant_types:
+        var_types_to_use = []
+        # TODO double-check that this is correct:
+        if "snv" in variant_types:
+            var_types_to_use.append("snv")
+        if "deletion" or "indel" or "delins" in variant_types:
+            var_types_to_use.append("deletion")
+        if "insertion" or "indel" or "delins" in variant_types:
+            var_types_to_use.append("insertion")
+        if "delins" in variant_types:
+            var_types_to_use.append("delins")
+        var_types_to_use = list(set(var_types_to_use))
+        vcf_df.query("VAR_TYPE in @var_types_to_use")
+
+    return vcf_df
 
 
-def get_vcf_variants(vcf_path, vcf_fields=None, alt_number=1, start_position=None, end_position=None, 
+def get_vcf_variants(vcf_path, vcf_fields=None, alt_number=1, chrom=None, start_position=None, end_position=None, 
         pad=None, ref_alleles=None, alt_alleles=None, qual_threshold=None, variant_types=None):
     """ Tool to get variants in a VCF based on any of: start position, end position, ref allele, alt allele, quality 
     score, variant type. If no filters are specified, the function will return a dataframe of the parsed VCF.  This 
@@ -116,6 +126,7 @@ def get_vcf_variants(vcf_path, vcf_fields=None, alt_number=1, start_position=Non
     # TODO add in 'alt_number' functionality. `numalt` is a helpful column output by allel.vcf_to_dataframe
     :param list alt_number: optional, if >1, ALT columns will be named 'ALT_1', 'ALT_2', 'ALT_3', etc, otherwise just 
         one will be named 'ALT'
+    :param str chrom: optional, chromosome to filter variants by.
     :param int start_position: optional, start position to filter variants by.
     :param int end_position: optional, end position to filter variants by.
     :param int pad: optional, pads the pos and end param if either are specified.
@@ -129,10 +140,10 @@ def get_vcf_variants(vcf_path, vcf_fields=None, alt_number=1, start_position=Non
     """
 
     # Check user input, reformat lists to uppercase
-    vcf_fields, alt_allele_columns, ref_alleles, alt_alleles, variant_types = _check_and_reformat_user_inputs(
-            vcf_path=vcf_path, vcf_fields=vcf_fields, start_position=start_position, end_position=end_position, pad=pad, 
-            ref_alleles=ref_alleles, alt_alleles=alt_alleles, qual_threshold=qual_threshold, 
-            variant_types=variant_types)
+    vcf_fields, chrom, alt_number, ref_alleles, alt_alleles, variant_types = _check_and_reformat_user_inputs(
+            vcf_path=vcf_path, vcf_fields=vcf_fields, alt_number=alt_number, chrom=chrom, start_position=start_position, 
+            end_position=end_position, pad=pad, ref_alleles=ref_alleles, alt_alleles=alt_alleles, 
+            qual_threshold=qual_threshold, variant_types=variant_types)
 
     # Get non-empty dataframe from parsed VCF
     vcf_df = get_vcf_df(vcf_path=vcf_path, vcf_fields=vcf_fields, alt_number=alt_number)
@@ -141,12 +152,14 @@ def get_vcf_variants(vcf_path, vcf_fields=None, alt_number=1, start_position=Non
     vcf_df = add_columns_to_vcf_df(vcf_df)
 
 
-    filtered_df = _filter_vcf_df(vcf_df=vcf_df, start_position=start_position, end_position=end_position, pad=pad, 
-            ref_alleles=ref_alleles, alt_alleles=alt_alleles, qual_threshold=qual_threshold, 
+    vcf_df = filter_vcf_df(vcf_df=vcf_df, chrom=chrom, start_position=start_position, end_position=end_position, 
+            pad=pad, ref_alleles=ref_alleles, alt_alleles=alt_alleles, qual_threshold=qual_threshold, 
             variant_types=variant_types)
+    
+    return vcf_df
 
 
-def _check_and_reformat_user_inputs(vcf_path, vcf_fields, alt_number, start_position, end_position, pad, 
+def _check_and_reformat_user_inputs(vcf_path, vcf_fields, chrom, alt_number, start_position, end_position, pad, 
         ref_alleles, alt_alleles, qual_threshold, variant_types):
     """ Check inputs to function get_vcf_variants """
 
@@ -168,6 +181,9 @@ def _check_and_reformat_user_inputs(vcf_path, vcf_fields, alt_number, start_posi
         error_message = _generate_error_message("vcf_fields", "a list of strings")
         assert type(vcf_fields) == list, error_message
         assert set([type(i) for i in vcf_fields]) == {str}, error_message
+
+    if chrom:
+        chrom = str(chrom)
 
     if alt_number:
         assert type(alt_number) == int, _generate_error_message("alt_number", "an integer")
@@ -206,7 +222,7 @@ def _check_and_reformat_user_inputs(vcf_path, vcf_fields, alt_number, start_posi
         assert set([type(i) for i in variant_types]) == {str}, error_message
         variant_types = [i.upper() for i in variant_types]
 
-    return vcf_fields, ref_alleles, alt_alleles, variant_types
+    return vcf_fields, chrom, alt_number, ref_alleles, alt_alleles, variant_types
 
 
 
