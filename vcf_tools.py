@@ -70,6 +70,41 @@ def add_columns_to_vcf_df(vcf_df):
     return vcf_df
 
 
+def filter_vcf_df(vcf_df, start_position, end_position, pad, ref_alleles, alt_alleles, qual_threshold, 
+        variant_types):
+    """ Filter VCF dataframe 
+    # TODO finish docstring
+    """
+
+    if start_position:
+        assert type(start_position)
+        if pad:
+            start_position -= pad
+        vcf_df = vcf_df.query("POS >= @start_position")
+    
+    if end_position:
+        if pad:
+            end_position += pad
+        vcf_df = vcf_df.query("END <= @end_position")
+
+    if ref_alleles:
+        vcf_df = vcf_df.query("REF in @ref_alleles")
+
+    if alt_alleles:
+        vcf_df = vcf_df.query("ALT in @alt_alleles")
+
+    if qual_threshold:
+        vcf_df = vcf_df.query("QUAL >= @qual_threshold")
+
+    if variant_types:
+        pass
+        # df = pd.DataFrame()
+        # if "snv" in variant_types:
+        #     filtered_df = vcf_df.query("POS == END")
+        #     df = pd.concat([df, filtered_df])
+        # if ("DELETION" or "DELINS") in variant_types:
+
+
 def get_vcf_variants(vcf_path, vcf_fields=None, alt_number=1, start_position=None, end_position=None, 
         pad=None, ref_alleles=None, alt_alleles=None, qual_threshold=None, variant_types=None):
     """ Tool to get variants in a VCF based on any of: start position, end position, ref allele, alt allele, quality 
@@ -174,39 +209,6 @@ def _check_and_reformat_user_inputs(vcf_path, vcf_fields, alt_number, start_posi
     return vcf_fields, ref_alleles, alt_alleles, variant_types
 
 
-def filter_vcf_df(vcf_df, start_position, end_position, pad, ref_alleles, alt_alleles, qual_threshold, 
-        variant_types):
-    """ Filter VCF dataframe 
-    # TODO finish docstring
-    """
-
-    if start_position:
-        assert type(start_position)
-        if pad:
-            start_position -= pad
-        vcf_df = vcf_df.query("POS >= @start_position")
-    
-    if end_position:
-        if pad:
-            end_position += pad
-        vcf_df = vcf_df.query("END <= @end_position")
-
-    if ref_alleles:
-        vcf_df = vcf_df.query("REF in @ref_alleles")
-
-    if alt_alleles:
-        vcf_df = vcf_df.query("ALT in @alt_alleles")
-
-    if qual_threshold:
-        vcf_df = vcf_df.query("QUAL >= @qual_threshold")
-
-    if variant_types:
-        pass
-        # df = pd.DataFrame()
-        # if "snv" in variant_types:
-        #     filtered_df = vcf_df.query("POS == END")
-        #     df = pd.concat([df, filtered_df])
-        # if ("DELETION" or "DELINS") in variant_types:
 
     
 
