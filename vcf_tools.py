@@ -42,15 +42,14 @@ def add_columns_to_vcf_df(vcf_df):
 
     def _get_var_type(row):
         """ TODO add docstring """
-        ref_len, alt_len, alt_diff = row["REF_len"], row["ALT_len"], row["ALT_diff"]
-        if row["ALT_diff"] == 0 and row["REF_len"] == 1:
+        if row["REF_len"] == row["REF_len"] == 1:
             return "snv"
-        elif row["ALT_diff"] == 0 and row["REF_len"] != 1:
+        elif row["REF_len"] >= 1 and row["ALT_len"] >= 1:
             return "delins"
-        elif row["ALT_diff"] > 0 and row["REF_len"] == 1:
-            return "insertion"
-        elif row["ALT_diff"] < 0 and row["REF_len"] > 1:
+        elif row["REF_len"] > 1:
             return "deletion"
+        elif row["ALT_len"] > 1:
+            return "insertion"
         return "N/A"
 
     # Add allele sequence length columns for the ref and alt allele(s)
@@ -59,9 +58,6 @@ def add_columns_to_vcf_df(vcf_df):
 
     # Add END position column
     vcf_df["END"] = vcf_df["POS"] + vcf_df["REF_len"] - 1 # subtract one since VCFs are 1-indexed
-
-    # Add column(s) which are the difference between the alt(s) and ref allele sequence lengths
-    vcf_df["ALT_diff"] = vcf_df["ALT_len"] - vcf_df["REF_len"]
 
     # Add variant type column, which determines if the variant is specifically one of: 'snv', 'delins', 'deletion', 
     # 'insertion'
