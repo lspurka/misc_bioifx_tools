@@ -40,27 +40,18 @@ def get_vcf_df(vcf_path, vcf_fields=None, alt_number=1):
 def add_columns_to_vcf_df(vcf_df):
     """ TODO docstring """
 
-    def _determine_var_type(row):
+    def _get_var_type(row):
+        """ TODO add docstring """
         ref_len, alt_len, alt_diff = row["REF_len"], row["ALT_len"], row["ALT_diff"]
-
         if row["ALT_diff"] == 0 and row["REF_len"] == 1:
             return "snv"
-
-
-        
-        alt_diff = row["ALT_diff"]
-
-
-
-    def _add_var_type_col(vcf_df):
-        """ TODO docstring """
-        vcf_df["is_snv"] = vcf_df.apply()
-
-        vcf_df["is_snv"] = (vcf_df["ALT_diff"] == 0 and vcf_df["REF_len"] == 1)
-        vcf_df["is_snv"] = vcf_df["ALT_len"] == 1
-        vcf_df["is_snv"] = vcf_df["ALT_len"] == vcf_df["REF_len"] == 1
-
-        
+        elif row["ALT_diff"] == 0 and row["REF_len"] != 1:
+            return "delins"
+        elif row["ALT_diff"] > 0 and row["REF_len"] == 1:
+            return "insertion"
+        elif row["ALT_diff"] < 0 and row["REF_len"] > 1:
+            return "deletion"
+        return "N/A"
 
     # Add allele sequence length columns for the ref and alt allele(s)
     vcf_df["REF_len"] = vcf_df["REF"].str.len()
@@ -74,7 +65,9 @@ def add_columns_to_vcf_df(vcf_df):
 
     # Add variant type column, which determines if the variant is specifically one of: 'snv', 'delins', 'deletion', 
     # 'insertion'
-    vcf_df["VAR_TYPE"] = vcf_df.apply(_determine_var_type, axis=1)
+    vcf_df["VAR_TYPE"] = vcf_df.apply(_get_var_type, axis=1)
+
+    return vcf_df
 
 
 def get_vcf_variants(vcf_path, vcf_fields=None, alt_number=1, start_position=None, end_position=None, 
