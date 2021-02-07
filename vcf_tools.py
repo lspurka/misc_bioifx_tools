@@ -89,8 +89,6 @@ def get_vcf_variants(vcf_path, vcf_fields=None, alt_number=1, start_position=Non
             variant_types=variant_types)
 
 
-
-
 def _check_and_reformat_user_inputs(vcf_path, vcf_fields, alt_number, start_position, end_position, pad, 
         ref_alleles, alt_alleles, qual_threshold, variant_types):
     """ Check inputs to function get_vcf_variants """
@@ -150,9 +148,6 @@ def _check_and_reformat_user_inputs(vcf_path, vcf_fields, alt_number, start_posi
         assert type(variant_types) == list, error_message
         assert set([type(i) for i in variant_types]) == {str}, error_message
         variant_types = [i.upper() for i in variant_types]
-    
-    # TODO remove
-    print("YAY #1")
 
     return vcf_fields, ref_alleles, alt_alleles, variant_types
 
