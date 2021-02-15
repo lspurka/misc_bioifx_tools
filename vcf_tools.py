@@ -165,8 +165,11 @@ def get_vcf_variants(vcf_path, vcf_fields=None, alt_number=1, chrom=None, start_
 
 
 def _check_and_reformat_user_inputs(vcf_path, vcf_fields, chrom, alt_number, start_position, end_position, pad, 
-        ref_alleles, alt_alleles, qual_threshold, variant_types):
-    """ Check inputs to function get_vcf_variants """
+        ref_alleles, alt_alleles, qual_threshold, variant_types, out):
+    """ Check inputs to function get_vcf_variants, returns formatted variables: vcf_fields, chrom, alt_number, 
+    ref_alleles, alt_alleles, variant_types, out_sep.  out_sep is the separator (comma or tab) for out file, if out is 
+    provided.
+    """
 
     def _generate_error_message(param_str, type_str):
         """ Helper function to generate error message.
