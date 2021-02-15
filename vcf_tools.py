@@ -2,6 +2,7 @@
 
 import allel
 import os
+import pathlib
 
 
 def get_vcf_df(vcf_path, vcf_fields=None, alt_number=1):
@@ -13,7 +14,7 @@ def get_vcf_df(vcf_path, vcf_fields=None, alt_number=1):
     :return pandas.DataFrame: dataframe of VCF variants
     """
 
-    # Check that VCF file has variants
+    # Check that VCF file has entries
     # if vcf_fields is set to None, the default columns from allel will be output
 
     # TODO fix below logic to be more understandable
@@ -27,12 +28,6 @@ def get_vcf_df(vcf_path, vcf_fields=None, alt_number=1):
 
     vcf_df = allel.vcf_to_dataframe(vcf_path, fields=vcf_fields, alt_number=alt_number)
     assert not vcf_df.empty, f"ERROR: No VCF contents for: {vcf_path}"
-
-    # Check that columns from parsed VCF have variant rows
-    # vcf_df.dropna(axis=1, how="all", inplace=True)
-    # if vcf_fields:
-    #     assert not vcf_df.empty, "ERROR: No results, Double check the specified vcf_fields."
-    # assert not vcf_df.empty, "ERROR: No results.  Check inputs."
 
     return vcf_df
 
@@ -113,7 +108,7 @@ def filter_vcf_df(vcf_df, chrom, start_position, end_position, pad, ref_alleles,
 
 
 def get_vcf_variants(vcf_path, vcf_fields=None, alt_number=1, chrom=None, start_position=None, end_position=None, 
-        pad=None, ref_alleles=None, alt_alleles=None, qual_threshold=None, variant_types=None):
+        pad=None, ref_alleles=None, alt_alleles=None, qual_threshold=None, variant_types=None, out=None):
     """ Tool to get variants in a VCF based on any of: start position, end position, ref allele, alt allele, quality 
     score, variant type. If no filters are specified, the function will return a dataframe of the parsed VCF.  This 
     tool works best for small scale variants, rather than CNV VCFs.
@@ -133,6 +128,8 @@ def get_vcf_variants(vcf_path, vcf_fields=None, alt_number=1, chrom=None, start_
     :param list(str) variant_types: optional, list of variant types to filter variants by, any of: 'snv', 
         'indel', 'deletion', 'insertion', 'delins'. Delins variants will be included if any of 'indel', 'deletion', 
         'insertion', 'delins' are specified.
+    :param str out: optional, if provided, the final filtered dataframe of the VCF will be output to the specified path.  
+        File type must be .csv or .tsv
     :return pandas.DataFrame: dataframe of VCF variants
     """
 
@@ -145,10 +142,10 @@ def get_vcf_variants(vcf_path, vcf_fields=None, alt_number=1, chrom=None, start_
     # numbers, or strings
 
     # Check user input, reformat lists to uppercase
-    vcf_fields, chrom, alt_number, ref_alleles, alt_alleles, variant_types = _check_and_reformat_user_inputs(
+    vcf_fields, chrom, alt_number, ref_alleles, alt_alleles, variant_types, out_sep = _check_and_reformat_user_inputs(
             vcf_path=vcf_path, vcf_fields=vcf_fields, alt_number=alt_number, chrom=chrom, start_position=start_position, 
             end_position=end_position, pad=pad, ref_alleles=ref_alleles, alt_alleles=alt_alleles, 
-            qual_threshold=qual_threshold, variant_types=variant_types)
+            qual_threshold=qual_threshold, variant_types=variant_types, out=out)
 
     # Get non-empty dataframe from parsed VCF
     vcf_df = get_vcf_df(vcf_path=vcf_path, vcf_fields=vcf_fields, alt_number=alt_number)
@@ -161,6 +158,9 @@ def get_vcf_variants(vcf_path, vcf_fields=None, alt_number=1, chrom=None, start_
             pad=pad, ref_alleles=ref_alleles, alt_alleles=alt_alleles, qual_threshold=qual_threshold, 
             variant_types=variant_types)
     
+    if out:
+        vcf_df.to_csv(out, sep=out_sep)
+
     return vcf_df
 
 
@@ -227,7 +227,17 @@ def _check_and_reformat_user_inputs(vcf_path, vcf_fields, chrom, alt_number, sta
         assert set([type(i) for i in variant_types]) == {str}, error_message
         variant_types = [i.upper() for i in variant_types]
 
-    return vcf_fields, chrom, alt_number, ref_alleles, alt_alleles, variant_types
+    out_sep = None
+    if out:
+        assert not os.path.exists(out), f"ERROR: out path already exists: {out}."
+        assert pathlib.Path(out).suffix in [".csv", ".tsv"], f"ERROR: out path must end with '.csv' or '.tsv'."
+        os.makedirs(os.path.dirname(out), exist_ok=True)
+        if pathlib.Path(out).suffix == ".csv":
+            out_sep = ","
+        elif pathlib.Path(out).suffix == ".tsv":
+            out_sep = "\t"
+
+    return vcf_fields, chrom, alt_number, ref_alleles, alt_alleles, variant_types, out_sep
 
 
 
