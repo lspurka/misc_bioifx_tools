@@ -159,7 +159,7 @@ def get_vcf_variants(vcf_path, vcf_fields=None, alt_number=1, chrom=None, start_
             variant_types=variant_types)
     
     if out:
-        vcf_df.to_csv(out, sep=out_sep)
+        vcf_df.to_csv(out, sep=out_sep, index=False)
 
     return vcf_df
 
