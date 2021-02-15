@@ -136,6 +136,14 @@ def get_vcf_variants(vcf_path, vcf_fields=None, alt_number=1, chrom=None, start_
     :return pandas.DataFrame: dataframe of VCF variants
     """
 
+    # TODO add custom_filters param, which is a dictionary where the key is the VCF column name (for example, "AB" or 
+    # "interpretation") and has any of the following sub keys "eq" (equal to), "ne" (not equal to) "gt" (greater than), 
+    # "lt" (less than), "gte" (greater than or equal to), "lte" (less than or equal to)
+    # So for AB and interpretation, the input might look like: 
+    # {"AB": {"gte":  0.1}, "interpretation": {"eq": ["pathogenic", "likely pathogenic"]}}
+    # check that the input types, for example import numbers, isinstance(5.4534, numbers.Real).  eq / ne can be lists, 
+    # numbers, or strings
+
     # Check user input, reformat lists to uppercase
     vcf_fields, chrom, alt_number, ref_alleles, alt_alleles, variant_types = _check_and_reformat_user_inputs(
             vcf_path=vcf_path, vcf_fields=vcf_fields, alt_number=alt_number, chrom=chrom, start_position=start_position, 
